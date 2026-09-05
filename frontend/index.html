@@ -6,25 +6,32 @@
 <title>Blitz Board — Monad 闪电棋</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#0a0a0a; color:#e0e0e0; min-height:100vh; display:flex; justify-content:center; padding:32px 16px; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#07070f; background-image:radial-gradient(900px 500px at 50% -100px, rgba(168,85,232,0.16), transparent 70%); color:#e6e6f0; min-height:100vh; display:flex; justify-content:center; padding:32px 16px; }
+.page { display:flex; gap:20px; align-items:flex-start; justify-content:center; width:100%; }
+.ai-col { flex:1; min-width:280px; max-width:360px; position:sticky; top:32px; }
+@media (max-width: 920px) { .page { flex-direction:column; align-items:center; } .ai-col { width:100%; max-width:520px; } }
+.ai-line { font-size:13px; color:#c4b5fd; background:#1a1a35; border:1px solid #2e2e4a; border-radius:8px; padding:10px 12px; margin-top:8px; line-height:1.5; word-break:break-all; }
+.ai-line.dim { color:#777; }
+.ai-badge { font-size:11px; background:#a855e8; color:#fff; border-radius:6px; padding:2px 8px; margin-left:6px; vertical-align:middle; }
 .wrap { max-width:520px; width:100%; }
-h1 { text-align:center; font-size:26px; margin-bottom:4px; background:linear-gradient(135deg,#836ef9,#ec4899); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.sub { text-align:center; color:#888; font-size:13px; margin-bottom:24px; }
-.card { background:#161616; border:1px solid #2a2a2a; border-radius:12px; padding:18px; margin-bottom:16px; }
-.card h2 { font-size:14px; color:#aaa; margin-bottom:12px; }
-button { background:#836ef9; color:#fff; border:none; padding:11px 20px; border-radius:8px; font-size:14px; cursor:pointer; width:100%; }
-button:hover { background:#6d4fd8; }
-button:disabled { background:#3a3a3a; color:#777; cursor:not-allowed; }
-button.connect { background:#2563eb; }
+h1 { text-align:center; font-size:26px; margin-bottom:4px; background:linear-gradient(135deg,#a855e8,#ffd23f); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.sub { text-align:center; color:#9a9ab8; font-size:13px; margin-bottom:24px; }
+.card { background:#12122a; border:1px solid #2c2c4a; border-radius:12px; padding:18px; margin-bottom:16px; box-shadow:0 0 24px rgba(168,85,232,0.07); }
+.card h2 { font-size:14px; color:#9a9ab8; margin-bottom:12px; }
+button { background:#a855e8; color:#fff; border:none; padding:11px 20px; border-radius:8px; font-size:14px; cursor:pointer; width:100%; }
+button:hover { background:#8e3fd0; }
+button:disabled { background:#33334d; color:#777; cursor:not-allowed; }
+button.connect { background:#6366f1; }
 button.small { width:auto; padding:8px 14px; font-size:13px; }
-button.tiny { width:auto; padding:4px 10px; font-size:12px; background:#4ade80; color:#0a0a0a; font-weight:700; }
-input[type=number] { width:110px; background:#0a0a0a; border:1px solid #333; color:#e0e0e0; padding:8px; border-radius:8px; font-size:14px; }
+button.tiny { width:auto; padding:4px 10px; font-size:12px; background:#ffd23f; color:#0a0a14; font-weight:700; }
+input[type=number] { width:110px; background:#0a0a18; border:1px solid #33335a; color:#e0e0e0; padding:8px; border-radius:8px; font-size:14px; }
+input[type=password] { flex:1; background:#0a0a18; border:1px solid #33335a; color:#e0e0e0; padding:8px; border-radius:8px; font-size:13px; }
 .status { font-size:12px; color:#888; margin-top:8px; word-break:break-all; min-height:16px; }
 .status.ok { color:#4ade80; } .status.err { color:#f87171; }
-#gid { font-size:22px; font-weight:700; color:#836ef9; font-family:monospace; }
+#gid { font-size:22px; font-weight:700; color:#a855e8; font-family:monospace; }
 #sideBanner { text-align:center; font-size:16px; font-weight:700; padding:10px; border-radius:8px; margin:8px 0; }
-.side-w { background:#1e293b; color:#93c5fd; }
-.side-b { background:#1e293b; color:#93c5fd; }
+.side-w { background:#1e1b3a; color:#c4b5fd; }
+.side-b { background:#1e1b3a; color:#c4b5fd; }
 .side-turn { outline:2px solid #4ade80; }
 #board { display:grid; grid-template-columns:repeat(5,1fr); gap:3px; margin:10px 0; user-select:none; }
 .cell { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:34px; cursor:pointer; border-radius:6px; background:#f0d9b5; position:relative; }
@@ -45,6 +52,7 @@ input[type=number] { width:110px; background:#0a0a0a; border:1px solid #333; col
 </style>
 </head>
 <body>
+<div class="page">
 <div class="wrap">
   <h1>Blitz Board</h1>
   <p class="sub">5×5 闪电棋 · 每步一笔交易 · 吃王即胜 · Monad Testnet</p>
@@ -79,6 +87,18 @@ input[type=number] { width:110px; background:#0a0a0a; border:1px solid #333; col
       <button class="small" id="timeoutBtn" onclick="claimTimeout()">对手超时(180s)判负</button>
     </div>
     <div class="status" id="playStatus"></div>
+  </div>
+</div>
+
+  <div class="ai-col">
+    <div class="card">
+      <h2>🤖 AI 解说 <span class="ai-badge">DeepSeek</span></h2>
+      <div class="row">
+        <input type="password" id="aiKey" placeholder="填入 DeepSeek API Key（sk-…），仅存本机浏览器" style="flex:1;min-width:0;">
+        <button class="small" onclick="saveAiKey()">保存</button>
+      </div>
+      <div id="aiFeed"><div class="ai-line dim">走子后自动生成一句解说。先在上方填入你自己的 DeepSeek Key（只存本机浏览器，不上链不入库）。</div></div>
+    </div>
   </div>
 </div>
 
@@ -377,6 +397,9 @@ async function refresh() {
       (status === 1 ? ` · 剩余 <span id="timer"></span>` : "");
     if (status === 1) tick(g[3]);
 
+    // AI 解说触发：步数变化时生成一句（首次加载不触发）
+    if (mc !== aiLastMc) { const first = (aiLastMc === -1); aiLastMc = mc; if (!first) aiComment(cells, Number(g[6])); }
+
     if (selected === -1) render(cells);
   } catch(e) { /* 静默，下一轮再试 */ }
 }
@@ -422,6 +445,65 @@ async function withGas(fn, args) {
   } catch(_) {
     return fn(...args);
   }
+}
+
+// ---------- AI 解说（DeepSeek，Key 仅存本机 localStorage） ----------
+
+let aiLastMc = -1;
+
+function boardAscii(cells) {
+  const rows = [];
+  for (let rank = 4; rank >= 0; rank--) {
+    let row = "";
+    for (let file = 0; file < 5; file++) {
+      const p = cells[file + rank*8];
+      row += (p === 0 ? "." : (p <= 6 ? "PNBRQK"[p-1] : "pnbrqk"[p-7])) + " ";
+    }
+    rows.push((rank+1) + "| " + row);
+  }
+  return rows.join("\n") + "\n   a b c d e";
+}
+
+function addAiLine(text, dim) {
+  const feed = document.getElementById("aiFeed");
+  const d = document.createElement("div");
+  d.className = "ai-line" + (dim ? " dim" : "");
+  d.textContent = text;
+  feed.insertBefore(d, feed.firstChild);
+  while (feed.children.length > 4) feed.removeChild(feed.lastChild);
+}
+
+async function aiComment(cells, toMove) {
+  const key = localStorage.getItem("bb_ai_key") || "";
+  if (!key) { addAiLine("💡 填入 DeepSeek Key 后，这里会出现每步的 AI 解说", true); return; }
+  addAiLine("🤖 解说生成中…", true);
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    const res = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [{ role: "user", content:
+          "你是Monad链上5x5闪电棋的解说员，规则是吃掉对方王即胜。请用一句中文（不超过25字）点评当前局势，语气轻松专业，直接输出这句话本身。棋盘如下（大写=白方，小写=黑方，.=空格，第5行在棋盘最上）：\n" +
+          boardAscii(cells) + "\n当前轮到：" + (Number(toMove) === 0 ? "白方" : "黑方") }],
+        max_tokens: 60, temperature: 0.9
+      }),
+      signal: ctrl.signal
+    });
+    clearTimeout(timer);
+    const j = await res.json();
+    const text = j && j.choices && j.choices[0] && j.choices[0].message ? String(j.choices[0].message.content || "").trim() : "";
+    addAiLine(text ? "🤖 " + text : "（解说暂不可用）");
+  } catch(_) { addAiLine("（解说暂不可用：网络或 Key 问题，不影响下棋）"); }
+}
+
+function saveAiKey() {
+  const v = document.getElementById("aiKey").value.trim();
+  if (!v) return;
+  localStorage.setItem("bb_ai_key", v);
+  addAiLine("✅ Key 已保存（仅存本机浏览器）", true);
 }
 </script>
 </body>
