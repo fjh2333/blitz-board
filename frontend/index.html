@@ -238,7 +238,13 @@ async function joinGame() {
     el.textContent = "已签名，等待上链…";
     await tx.wait();
     enterGame();
-  } catch(e) { el.className="status err"; el.textContent = "join 失败: " + (e?.shortMessage || e.message); }
+  } catch(e) {
+    const msg = (e?.shortMessage || e?.message || String(e));
+    if (msg.includes("not waiting")) { el.className="status err"; el.textContent = "该局已开始或已结束，无法加入"; }
+    else if (msg.includes("self join")) { el.className="status err"; el.textContent = "不能加入自己创建的局"; }
+    else if (msg.includes("no game")) { el.className="status err"; el.textContent = "局号不存在"; }
+    else { el.className="status err"; el.textContent = "join 失败: " + msg; }
+  }
 }
 
 function enterById() {
