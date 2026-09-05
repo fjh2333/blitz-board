@@ -219,8 +219,21 @@ async function joinGame() {
   const el = document.getElementById("lobbyStatus");
   gameId = Number(document.getElementById("joinId").value);
   if (!gameId) { el.className="status err"; el.textContent="请输入局号"; return; }
-  el.className="status"; el.textContent="发送 join 交易，请在 MetaMask 确认…";
+  el.className="status"; el.textContent="检查对局状态…";
   try {
+    const g = await contract.games(gameId);
+    const status = Number(g[5]);
+    const white = String(g[1]).toLowerCase();
+    if (status === 1 || status === 2) {
+      const mine = me && (white === me.toLowerCase() || String(g[2]).toLowerCase() === me.toLowerCase());
+      el.className = "status err";
+      el.textContent = status === 1
+        ? (mine ? "该局已开始——这是你的对局，点「直接进入」继续" : "该局已开始，无法加入（可用「直接进入」观战）")
+        : "该局已结束，无法加入（可用「直接进入」回看）";
+      return;
+    }
+    if (white === me.toLowerCase()) { el.className="status err"; el.textContent="这是你自己创建的局，不能加入自己"; return; }
+    el.textContent="发送 join 交易，请在 MetaMask 确认…";
     const tx = await withGas(contract.join, [gameId]);
     el.textContent = "已签名，等待上链…";
     await tx.wait();
