@@ -12,6 +12,9 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; backg
 @media (max-width: 920px) { .page { flex-direction:column; align-items:center; } .ai-col { width:100%; max-width:520px; } }
 .ai-line { font-size:13px; color:#c4b5fd; background:#1a1a35; border:1px solid #2e2e4a; border-radius:8px; padding:10px 12px; margin-top:8px; line-height:1.5; word-break:break-all; }
 .ai-line.dim { color:#777; }
+.ai-line.pending { color:#9a9ab8; font-style:italic; }
+.ai-line.latest { background:#221f45; border-color:#a855e8; color:#e9d5ff; }
+.ai-line.old { opacity:0.5; }
 .ai-badge { font-size:11px; background:#a855e8; color:#fff; border-radius:6px; padding:2px 8px; margin-left:6px; vertical-align:middle; }
 .wrap { max-width:520px; width:100%; }
 h1 { text-align:center; font-size:26px; margin-bottom:4px; background:linear-gradient(135deg,#a855e8,#ffd23f); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
@@ -464,19 +467,41 @@ function boardAscii(cells) {
   return rows.join("\n") + "\n   a b c d e";
 }
 
-function addAiLine(text, dim) {
+function sqName(sq) { return "abcde"[sq % 8] + (Math.floor(sq/8) + 1); }
+const PIECE_CN = {1:"兵",2:"马",3:"象",4:"车",5:"后",6:"王"};
+
+async function lastMoveInfo(gameId) {
+  try {
+    const evts = await contract.queryFilter(contract.filters.MovePlayed(gameId));
+    if (!evts.length) return "";
+    const e = evts[evts.length - 1];
+    const piece = Number(e.args[3]);
+    const side = piece <= 6 ? "白方" : "黑方";
+    const name = PIECE_CN[piece <= 6 ? piece : piece - 6];
+    const cap = "";
+    return side + " " + name + " " + sqName(Number(e.args[1])) + "→" + sqName(Number(e.args[2]));
+  } catch(_) { return ""; }
+}
+
+function addAiLine(text, cls) {
   const feed = document.getElementById("aiFeed");
   const d = document.createElement("div");
-  d.className = "ai-line" + (dim ? " dim" : "");
+  d.className = "ai-line" + (cls ? " " + cls : "");
   d.textContent = text;
   feed.insertBefore(d, feed.firstChild);
+  // 旧的「最新」降级变暗
+  [...feed.children].forEach(e => { if (e !== d && e.classList.contains("latest")) { e.classList.remove("latest"); e.classList.add("old"); } });
   while (feed.children.length > 4) feed.removeChild(feed.lastChild);
+  return d;
 }
 
 async function aiComment(cells, toMove) {
   const key = localStorage.getItem("bb_ai_key") || "";
-  if (!key) { addAiLine("💡 填入 DeepSeek Key 后，这里会出现每步的 AI 解说", true); return; }
-  addAiLine("🤖 解说生成中…", true);
+  if (!key) { addAiLine("💡 填入 DeepSeek Key 后，这里会出现每步的 AI 解说", "dim"); return; }
+  // 清掉上一条未完成的「生成中」
+  document.querySelectorAll(".ai-line.pending").forEach(e => e.remove());
+  const info = await lastMoveInfo(gameId);
+  const pending = addAiLine("🤖 正在解说" + (info ? "：" + info : "…"), "pending");
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 10000);
@@ -486,7 +511,7 @@ async function aiComment(cells, toMove) {
       body: JSON.stringify({
         model: "deepseek-chat",
         messages: [{ role: "user", content:
-          "你是Monad链上5x5闪电棋的解说员，规则是吃掉对方王即胜。请用一句中文（不超过25字）点评当前局势，语气轻松专业，直接输出这句话本身。棋盘如下（大写=白方，小写=黑方，.=空格，第5行在棋盘最上）：\n" +
+          "你是Monad链上5x5闪电棋的解说员，规则是吃掉对方王即胜。最新一步是「" + (info || "开局") + "」。请用一句中文（不超过22字）点评这一步或当前局势，语气轻松专业，直接输出这句话本身，不要任何前缀。棋盘（大写=白方，小写=黑方，.=空，第5行在最上）：\n" +
           boardAscii(cells) + "\n当前轮到：" + (Number(toMove) === 0 ? "白方" : "黑方") }],
         max_tokens: 60, temperature: 0.9
       }),
@@ -495,8 +520,12 @@ async function aiComment(cells, toMove) {
     clearTimeout(timer);
     const j = await res.json();
     const text = j && j.choices && j.choices[0] && j.choices[0].message ? String(j.choices[0].message.content || "").trim() : "";
-    addAiLine(text ? "🤖 " + text : "（解说暂不可用）");
-  } catch(_) { addAiLine("（解说暂不可用：网络或 Key 问题，不影响下棋）"); }
+    pending.remove();
+    addAiLine((info ? info + " — " : "") + "🤖 " + (text || "（解说暂不可用）"), "latest");
+  } catch(_) {
+    pending.remove();
+    addAiLine("（解说暂不可用：网络或 Key 问题，不影响下棋）", "old");
+  }
 }
 
 function saveAiKey() {
