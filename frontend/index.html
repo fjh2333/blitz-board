@@ -58,7 +58,7 @@ input[type=password] { flex:1; background:#0a0a18; border:1px solid #33335a; col
 <div class="page">
 <div class="wrap">
   <h1>Blitz Board</h1>
-  <p class="sub">5×5 闪电棋 · 每步一笔交易 · 吃王即胜 · Monad Testnet</p>
+  <p class="sub">5×5 闪电棋 · 每步一笔交易 · 吃王即胜 · Monad Testnet · v<span id="ver"></span></p>
 
   <div class="card">
     <h2>1. 连接钱包</h2>
@@ -110,6 +110,8 @@ const __$G=typeof globalThis!=="undefined"?globalThis:typeof window!=="undefined
 </script>
 <script>
 const CONTRACT_ADDRESS = "0xE2FaC0807C945118Fc93893ad81b4D477491Aa3D";
+const APP_VERSION = "1.2";
+document.getElementById("ver").textContent = APP_VERSION;
 const MONAD_CHAIN_ID = 10143;
 const TIMEOUT = 180;
 const ABI = [
